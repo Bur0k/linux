@@ -6,11 +6,11 @@
 /* the following events that user-space can register for */
 #define FAN_ACCESS		0x00000001	/* File was accessed */
 #define FAN_MODIFY		0x00000002	/* File was modified */
-#define FAN_DELETE		0x00000004	/* File was deleted */
+#define FAN_DELETE		0x00000200	/* Subfile was deleted */
 #define FAN_CLOSE_WRITE		0x00000008	/* Writtable file closed */
 #define FAN_CLOSE_NOWRITE	0x00000010	/* Unwrittable file closed */
 #define FAN_OPEN		0x00000020	/* File was opened */
-#define FAN_CREATE		0x00000040	/* File was created */
+#define FAN_CREATE		0x00000100	/* Subfile was created */
 
 #define FAN_Q_OVERFLOW		0x00004000	/* Event queued overflowed */
 
