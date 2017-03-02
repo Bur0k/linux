@@ -203,6 +203,8 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	else
 		mnt = NULL;
 
+	if(mask & FS_CREATE)
+		printk(KERN_INFO "file was created: %s", file_name);
 	/*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
 	 * be expensive.  It protects walking the *_fsnotify_marks lists.
