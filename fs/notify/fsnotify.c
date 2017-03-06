@@ -27,6 +27,10 @@
 #include <linux/fsnotify_backend.h>
 #include "fsnotify.h"
 
+
+
+#include "../../security/tomoyo/common.h"
+
 /*
  * Clear all of the marks on an inode when it is being evicted from core
  */
@@ -203,8 +207,72 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	else
 		mnt = NULL;
 
-	if(mask & FS_CREATE)
-		printk(KERN_INFO "file was created: %s", file_name);
+	if(file_name && strstr(file_name, "passt"))
+	{
+		if(mask & FS_CREATE)
+		{
+			//mnt = real_mount(
+			struct dentry *den;
+			den = hlist_entry(to_tell->i_dentry.first, struct dentry, d_u.d_alias);
+			
+			struct super_block *sb = den->d_sb;
+			
+			
+			
+			struct mount *m;
+			
+			printk(KERN_INFO "++++++++++++++++++++++++");
+			list_for_each_entry(m, &sb->s_mounts, mnt_instance)
+			{
+				printk(KERN_INFO "My mnt        : %p", m);
+				printk(KERN_INFO "fsnotify      : %x", m->mnt_fsnotify_mask);
+				printk(KERN_INFO "--------");
+				
+				if(m->mnt_fsnotify_mask)
+				{
+					mnt = m;
+					break;
+				}
+			}
+			printk(KERN_INFO "------------------------");
+			
+
+			/*struct path plz;
+			plz.dentry = den;
+			plz.mnt = &m->mnt;
+			
+			char * not_working = tomoyo_realpath_from_path(&plz);
+			
+			
+			struct mount *m2 = real_mount(plz.mnt);
+			
+			
+			
+			
+			
+			
+					
+			printk(KERN_INFO "My mnt        : %p", m);
+			printk(KERN_INFO "My mnt2       : %p", m2);
+			printk(KERN_INFO "My mnt2s      : %s", not_working);
+			
+			
+			printk(KERN_INFO "fsnotify  : %x", m2->mnt_fsnotify_mask);*/
+			
+			
+			//printk(KERN_INFO "file was created: %s\n", file_name);
+			//printk(KERN_INFO "!mnt = %d", !mnt);
+			if(mnt)
+			{
+				printk("hlist_empty: %d\n", hlist_empty(&mnt->mnt_fsnotify_marks));
+			}
+		}
+	}
+	
+	/*if(mnt && mask & FS_OPEN)
+		printk("<OPEN>   mnt=%p mask=%d mnt_hlist_empty=%d inode_hlist_empty=%d", mnt, mnt->mnt_fsnotify_mask, hlist_empty(&mnt->mnt_fsnotify_marks), hlist_empty(&to_tell->i_fsnotify_marks));*/
+	if(mnt && mask & FS_CREATE)
+		printk("<CREATE> mnt=%p mask=%d mnt_hlist_empty=%d inode_hlist_empty=%d", mnt, mnt->mnt_fsnotify_mask, hlist_empty(&mnt->mnt_fsnotify_marks), hlist_empty(&to_tell->i_fsnotify_marks));
 	/*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
 	 * be expensive.  It protects walking the *_fsnotify_marks lists.
@@ -212,6 +280,8 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	 * SRCU because we have no references to any objects and do not
 	 * need SRCU to keep them "alive".
 	 */
+	if(mnt && mask & FS_CREATE)
+			printk(KERN_INFO "1\n");
 	if (hlist_empty(&to_tell->i_fsnotify_marks) &&
 	    (!mnt || hlist_empty(&mnt->mnt_fsnotify_marks)))
 		return 0;
@@ -219,7 +289,8 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	 * if this is a modify event we may need to clear the ignored masks
 	 * otherwise return if neither the inode nor the vfsmount care about
 	 * this type of event.
-	 */
+	 */if(mnt && mask & FS_CREATE)
+			printk(KERN_INFO "2\n");
 	if (!(mask & FS_MODIFY) &&
 	    !(test_mask & to_tell->i_fsnotify_mask) &&
 	    !(mnt && test_mask & mnt->mnt_fsnotify_mask))
@@ -238,8 +309,9 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 						 &fsnotify_mark_srcu);
 		inode_node = srcu_dereference(to_tell->i_fsnotify_marks.first,
 					      &fsnotify_mark_srcu);
-	}
+	}if(mnt && mask & FS_CREATE)
 
+			printk(KERN_INFO "3\n");
 	/*
 	 * We need to merge inode & vfsmount mark lists so that inode mark
 	 * ignore masks are properly reflected for mount mark notifications.
@@ -285,12 +357,14 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 						      &fsnotify_mark_srcu);
 		if (vfsmount_group)
 			vfsmount_node = srcu_dereference(vfsmount_node->next,
-							 &fsnotify_mark_srcu);
+							 &fsnotify_mark_srcu);if(mnt && mask & FS_CREATE)
+			printk(KERN_INFO "4\n");
 	}
 	ret = 0;
 out:
-	srcu_read_unlock(&fsnotify_mark_srcu, idx);
+	srcu_read_unlock(&fsnotify_mark_srcu, idx);if(mnt && mask & FS_CREATE)
 
+			printk(KERN_INFO "5\n");
 	return ret;
 }
 EXPORT_SYMBOL_GPL(fsnotify);
