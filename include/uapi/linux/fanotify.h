@@ -69,7 +69,8 @@
 #define FAN_ALL_EVENTS (FAN_ACCESS |\
 			FAN_MODIFY |\
 			FAN_CLOSE |\
-			FAN_OPEN)
+			FAN_OPEN |\
+			FAN_CREATE)
 
 /*
  * All events which require a permission response from userspace
