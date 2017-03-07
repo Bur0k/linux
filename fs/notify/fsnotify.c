@@ -301,7 +301,6 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	struct mount *mnt = NULL;
 	struct dentry *den;
 	struct super_block *sb;
-	static int d;
 
 	if (data_is == FSNOTIFY_EVENT_PATH) {
 		mnt = real_mount(((const struct path *)data)->mnt);
