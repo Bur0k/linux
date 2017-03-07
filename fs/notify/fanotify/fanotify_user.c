@@ -130,6 +130,9 @@ static int fill_event_metadata(struct fsnotify_group *group,
 	metadata->reserved = 0;
 	metadata->mask = fsn_event->mask & FAN_ALL_OUTGOING_EVENTS;
 	metadata->pid = pid_vnr(event->tgid);
+	memset(metadata->file_name, 0, sizeof(metadata->file_name));
+	strncpy(metadata->file_name, event->file_name, sizeof(metadata->file_name));
+
 	if (unlikely(fsn_event->mask & FAN_Q_OVERFLOW))
 		metadata->fd = FAN_NOFD;
 	else {

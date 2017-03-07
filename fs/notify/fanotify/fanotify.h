@@ -18,6 +18,7 @@ struct fanotify_event_info {
 	 */
 	struct path path;
 	struct pid *tgid;
+	char file_name[NAME_MAX];
 };
 
 #ifdef CONFIG_FANOTIFY_ACCESS_PERMISSIONS

@@ -211,6 +211,10 @@ static int fanotify_handle_event(struct fsnotify_group *group,
 	event = fanotify_alloc_event(inode, mask, data);
 	if (unlikely(!event))
 		return -ENOMEM;
+	
+	if (unlikely(mask & FS_CREATE)) {
+		strncpy(event->file_name, file_name, sizeof(event->file_name));
+	}
 
 	fsn_event = &event->fse;
 	ret = fsnotify_add_event(group, fsn_event, fanotify_merge);

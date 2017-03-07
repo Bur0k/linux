@@ -93,7 +93,7 @@ struct fanotify_event_metadata {
 	__aligned_u64 mask;
 	__s32 fd;
 	__s32 pid;
-	char path[];
+	char file_name[NAME_MAX];
 };
 
 struct fanotify_response {
