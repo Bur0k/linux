@@ -82,7 +82,7 @@
 				 FAN_ALL_PERM_EVENTS |\
 				 FAN_Q_OVERFLOW)
 
-#define FANOTIFY_METADATA_VERSION	3
+#define FANOTIFY_METADATA_VERSION	4
 
 struct fanotify_event_metadata {
 	__u32 event_len;
@@ -92,6 +92,7 @@ struct fanotify_event_metadata {
 	__aligned_u64 mask;
 	__s32 fd;
 	__s32 pid;
+	char path[];
 };
 
 struct fanotify_response {

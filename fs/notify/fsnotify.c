@@ -185,94 +185,17 @@ static int send_to_group(struct inode *to_tell,
 					file_name, cookie);
 }
 
-/*
- * This is the main call to fsnotify.  The VFS calls into hook specific functions
- * in linux/fsnotify.h.  Those functions then in turn call here.  Here will call
- * out to all of the registered fsnotify_group.  Those groups can then use the
- * notification event in whatever means they feel necessary.
- */
-int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
-	     const unsigned char *file_name, u32 cookie)
+int fsnotify_instance(struct inode *to_tell, __u32 mask, const void *data,
+		      int data_is, const unsigned char *file_name, u32 cookie,
+		      struct mount *mnt)
 {
 	struct hlist_node *inode_node = NULL, *vfsmount_node = NULL;
 	struct fsnotify_mark *inode_mark = NULL, *vfsmount_mark = NULL;
 	struct fsnotify_group *inode_group, *vfsmount_group;
-	struct mount *mnt;
 	int idx, ret = 0;
 	/* global tests shouldn't care about events on child only the specific event */
 	__u32 test_mask = (mask & ~FS_EVENT_ON_CHILD);
 
-	if (data_is == FSNOTIFY_EVENT_PATH)
-		mnt = real_mount(((const struct path *)data)->mnt);
-	else
-		mnt = NULL;
-
-	if(file_name && strstr(file_name, "passt"))
-	{
-		if(mask & FS_CREATE)
-		{
-			//mnt = real_mount(
-			struct dentry *den;
-			den = hlist_entry(to_tell->i_dentry.first, struct dentry, d_u.d_alias);
-			
-			struct super_block *sb = den->d_sb;
-			
-			
-			
-			struct mount *m;
-			
-			printk(KERN_INFO "++++++++++++++++++++++++");
-			list_for_each_entry(m, &sb->s_mounts, mnt_instance)
-			{
-				printk(KERN_INFO "My mnt        : %p", m);
-				printk(KERN_INFO "fsnotify      : %x", m->mnt_fsnotify_mask);
-				printk(KERN_INFO "--------");
-				
-				if(m->mnt_fsnotify_mask)
-				{
-					mnt = m;
-					break;
-				}
-			}
-			printk(KERN_INFO "------------------------");
-			
-
-			/*struct path plz;
-			plz.dentry = den;
-			plz.mnt = &m->mnt;
-			
-			char * not_working = tomoyo_realpath_from_path(&plz);
-			
-			
-			struct mount *m2 = real_mount(plz.mnt);
-			
-			
-			
-			
-			
-			
-					
-			printk(KERN_INFO "My mnt        : %p", m);
-			printk(KERN_INFO "My mnt2       : %p", m2);
-			printk(KERN_INFO "My mnt2s      : %s", not_working);
-			
-			
-			printk(KERN_INFO "fsnotify  : %x", m2->mnt_fsnotify_mask);*/
-			
-			
-			//printk(KERN_INFO "file was created: %s\n", file_name);
-			//printk(KERN_INFO "!mnt = %d", !mnt);
-			if(mnt)
-			{
-				printk("hlist_empty: %d\n", hlist_empty(&mnt->mnt_fsnotify_marks));
-			}
-		}
-	}
-	
-	/*if(mnt && mask & FS_OPEN)
-		printk("<OPEN>   mnt=%p mask=%d mnt_hlist_empty=%d inode_hlist_empty=%d", mnt, mnt->mnt_fsnotify_mask, hlist_empty(&mnt->mnt_fsnotify_marks), hlist_empty(&to_tell->i_fsnotify_marks));*/
-	if(mnt && mask & FS_CREATE)
-		printk("<CREATE> mnt=%p mask=%d mnt_hlist_empty=%d inode_hlist_empty=%d", mnt, mnt->mnt_fsnotify_mask, hlist_empty(&mnt->mnt_fsnotify_marks), hlist_empty(&to_tell->i_fsnotify_marks));
 	/*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
 	 * be expensive.  It protects walking the *_fsnotify_marks lists.
@@ -280,8 +203,6 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	 * SRCU because we have no references to any objects and do not
 	 * need SRCU to keep them "alive".
 	 */
-	if(mnt && mask & FS_CREATE)
-			printk(KERN_INFO "1\n");
 	if (hlist_empty(&to_tell->i_fsnotify_marks) &&
 	    (!mnt || hlist_empty(&mnt->mnt_fsnotify_marks)))
 		return 0;
@@ -289,8 +210,7 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	 * if this is a modify event we may need to clear the ignored masks
 	 * otherwise return if neither the inode nor the vfsmount care about
 	 * this type of event.
-	 */if(mnt && mask & FS_CREATE)
-			printk(KERN_INFO "2\n");
+	 */
 	if (!(mask & FS_MODIFY) &&
 	    !(test_mask & to_tell->i_fsnotify_mask) &&
 	    !(mnt && test_mask & mnt->mnt_fsnotify_mask))
@@ -309,9 +229,8 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 						 &fsnotify_mark_srcu);
 		inode_node = srcu_dereference(to_tell->i_fsnotify_marks.first,
 					      &fsnotify_mark_srcu);
-	}if(mnt && mask & FS_CREATE)
+	}
 
-			printk(KERN_INFO "3\n");
 	/*
 	 * We need to merge inode & vfsmount mark lists so that inode mark
 	 * ignore masks are properly reflected for mount mark notifications.
@@ -362,9 +281,45 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	}
 	ret = 0;
 out:
-	srcu_read_unlock(&fsnotify_mark_srcu, idx);if(mnt && mask & FS_CREATE)
+	srcu_read_unlock(&fsnotify_mark_srcu, idx);
 
-			printk(KERN_INFO "5\n");
+	return ret;
+}
+
+/*
+ * This is the main call to fsnotify.  The VFS calls into hook specific functions
+ * in linux/fsnotify.h.  Those functions then in turn call here.  Here will call
+ * out to all of the registered fsnotify_group.  Those groups can then use the
+ * notification event in whatever means they feel necessary.
+ */
+int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
+	     const unsigned char *file_name, u32 cookie)
+{
+	int ret = 0;
+	struct mount *mnt = NULL;
+	struct dentry *den;
+	struct super_block *sb;
+
+	if (data_is == FSNOTIFY_EVENT_PATH) {
+		mnt = real_mount(((const struct path *)data)->mnt);
+		ret = fsnotify_instance(to_tell, mask, data, data_is, file_name,
+					cookie, mnt);
+	} else if (mask & CREATE) {
+		den = hlist_entry(to_tell->i_dentry.first, struct dentry, d_u.d_alias);
+		sb = den->d_sb;
+
+		list_for_each_entry (mnt, &sb->s_mounts, mnt_instance) {
+			if (mnt->mnt_fsnotify_mask & FS_CREATE) {
+				ret = fsnotify_instance(NULL, mask, data,
+							data_is, file_name,
+							cookie, mnt);
+			}
+		}
+	} else {
+		ret = fsnotify_instance(to_tell, mask, data, data_is, file_name,
+					cookie, mnt);
+	}
+
 	return ret;
 }
 EXPORT_SYMBOL_GPL(fsnotify);
