@@ -88,20 +88,24 @@ static bool fanotify_should_send_event(struct fsnotify_mark *inode_mark,
 				       const void *data, int data_type)
 {
 	__u32 marks_mask, marks_ignored_mask;
-	const struct path *path = data;
+	const struct path *path;
 
 	pr_debug("%s: inode_mark=%p vfsmnt_mark=%p mask=%x data=%p"
 		 " data_type=%d\n", __func__, inode_mark, vfsmnt_mark,
 		 event_mask, data, data_type);
 
 	/* if we don't have enough info to send an event to userspace say no */
-	if (data_type != FSNOTIFY_EVENT_PATH)
+	if (data_type == FSNOTIFY_EVENT_NONE)
 		return false;
 
-	/* sorry, fanotify only gives a damn about files and dirs */
-	if (!d_is_reg(path->dentry) &&
-	    !d_can_lookup(path->dentry))
-		return false;
+	if (data_type == FSNOTIFY_EVENT_PATH) {
+		path = data;
+
+		/* sorry, fanotify only gives a damn about files and dirs */
+		if (!d_is_reg(path->dentry) &&
+		    !d_can_lookup(path->dentry))
+			return false;
+	}
 
 	if (inode_mark && vfsmnt_mark) {
 		marks_mask = (vfsmnt_mark->mask | inode_mark->mask);
@@ -123,9 +127,11 @@ static bool fanotify_should_send_event(struct fsnotify_mark *inode_mark,
 		BUG();
 	}
 
-	if (d_is_dir(path->dentry) &&
-	    !(marks_mask & FS_ISDIR & ~marks_ignored_mask))
-		return false;
+	if (data_type == FSNOTIFY_EVENT_PATH) {
+	    if (d_is_dir(path->dentry) &&
+		!(marks_mask & FS_ISDIR & ~marks_ignored_mask))
+		    return false;
+	}
 
 	if (event_mask & FAN_ALL_OUTGOING_EVENTS & marks_mask &
 				 ~marks_ignored_mask)
