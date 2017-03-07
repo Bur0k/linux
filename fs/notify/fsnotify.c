@@ -313,8 +313,11 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 
 		list_for_each_entry(mnt, &sb->s_mounts, mnt_instance) {
 			if (mnt && mnt->mnt_fsnotify_mask & FS_CREATE) {  // XXX: Duplicates for to_tell???
-				ret = fsnotify_instance(to_tell, mask, data,
-							data_is, file_name,
+				struct path p;
+				p.dentry = den;
+				p.mnt = &mnt->mnt;
+				ret = fsnotify_instance(den->d_inode, FS_CREATE, &p,
+							FSNOTIFY_EVENT_PATH, file_name,
 							cookie | 0xdb9, mnt);  // XXX: Debug Cookie
 			}
 		}
