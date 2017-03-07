@@ -70,7 +70,8 @@
 			FAN_MODIFY |\
 			FAN_CLOSE |\
 			FAN_OPEN |\
-			FAN_CREATE)
+			FAN_CREATE |\
+			FAN_DELETE)
 
 /*
  * All events which require a permission response from userspace

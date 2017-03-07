@@ -265,6 +265,9 @@ int fsnotify_instance(struct inode *to_tell, __u32 mask, const void *data,
 				vfsmount_mark = NULL;
 			}
 		}
+		if (cookie & 0xa00) {
+			printk("send_to_group() with cookie set!\n");
+		}
 		ret = send_to_group(to_tell, inode_mark, vfsmount_mark, mask,
 				    data, data_is, cookie, file_name);
 
@@ -276,8 +279,7 @@ int fsnotify_instance(struct inode *to_tell, __u32 mask, const void *data,
 						      &fsnotify_mark_srcu);
 		if (vfsmount_group)
 			vfsmount_node = srcu_dereference(vfsmount_node->next,
-							 &fsnotify_mark_srcu);if(mnt && mask & FS_CREATE)
-			printk(KERN_INFO "4\n");
+							 &fsnotify_mark_srcu);
 	}
 	ret = 0;
 out:
@@ -299,26 +301,26 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	struct mount *mnt = NULL;
 	struct dentry *den;
 	struct super_block *sb;
+	static int d;
 
 	if (data_is == FSNOTIFY_EVENT_PATH) {
 		mnt = real_mount(((const struct path *)data)->mnt);
 		ret = fsnotify_instance(to_tell, mask, data, data_is, file_name,
 					cookie, mnt);
-	} else if (mask & CREATE) {
+	} else if (mask & FS_CREATE) {
 		den = hlist_entry(to_tell->i_dentry.first, struct dentry, d_u.d_alias);
 		sb = den->d_sb;
 
-		list_for_each_entry (mnt, &sb->s_mounts, mnt_instance) {
-			if (mnt->mnt_fsnotify_mask & FS_CREATE) {
-				ret = fsnotify_instance(NULL, mask, data,
+		list_for_each_entry(mnt, &sb->s_mounts, mnt_instance) {
+			if (mnt && mnt->mnt_fsnotify_mask & FS_CREATE) {  // XXX: Duplicates for to_tell???
+				ret = fsnotify_instance(to_tell, mask, data,
 							data_is, file_name,
-							cookie, mnt);
+							cookie | 0xdb9, mnt);  // XXX: Debug Cookie
 			}
 		}
-	} else {
+	} else
 		ret = fsnotify_instance(to_tell, mask, data, data_is, file_name,
 					cookie, mnt);
-	}
 
 	return ret;
 }
