@@ -315,7 +315,7 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 				struct path p;
 				p.dentry = den;
 				p.mnt = &mnt->mnt;
-				ret = fsnotify_instance(den->d_inode, FS_CREATE, &p,
+				ret = fsnotify_instance(den->d_inode, mask, &p,
 							FSNOTIFY_EVENT_PATH, file_name,
 							cookie | 0xdb9, mnt);  // XXX: Debug Cookie
 			}
