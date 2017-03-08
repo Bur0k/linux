@@ -265,9 +265,6 @@ int fsnotify_instance(struct inode *to_tell, __u32 mask, const void *data,
 				vfsmount_mark = NULL;
 			}
 		}
-		if (cookie & 0xa00) {
-			printk("send_to_group() with cookie set!\n");
-		}
 		ret = send_to_group(to_tell, inode_mark, vfsmount_mark, mask,
 				    data, data_is, cookie, file_name);
 
