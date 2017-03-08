@@ -203,7 +203,7 @@ static int fanotify_handle_event(struct fsnotify_group *group,
 	if (unlikely(!event))
 		return -ENOMEM;
 	
-	if (unlikely(mask & FS_CREATE)) {
+	if (mask & FS_CREATE)) {
 		strncpy(event->file_name, file_name, sizeof(event->file_name));
 	}
 
