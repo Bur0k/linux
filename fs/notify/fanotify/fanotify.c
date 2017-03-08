@@ -204,7 +204,7 @@ static int fanotify_handle_event(struct fsnotify_group *group,
 		return -ENOMEM;
 	
 	if (mask & FS_CREATE) {
-		strncpy(event->file_name, file_name, sizeof(event->file_name);
+		strncpy(event->file_name, file_name, sizeof(event->file_name));
 	}
 
 	fsn_event = &event->fse;
